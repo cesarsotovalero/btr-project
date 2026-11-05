@@ -1,18 +1,42 @@
 # BTR — Beat The Risk
 
-[![CI](https://github.com/cesarsotovalero/BTR/actions/workflows/ci.yml/badge.svg)](https://github.com/cesarsotovalero/BTR/actions/workflows/ci.yml)
+[![CI](https://github.com/cesarsotovalero/btr-project/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/cesarsotovalero/btr-project/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Pre-release: v0.1.0](https://img.shields.io/badge/Pre--release-v0.1.0-88cc33)](https://github.com/cesarsotovalero/btr-project/releases/tag/v0.1.0)
 
-An agentic AI web platform for credit-risk assessment at Skandinaviska Enskilda Banken (SEB). It orchestrates an 8-agent pipeline with human-in-the-loop checkpoints to analyze loan applications, financial statements, and ESG disclosures.
+**Credit risk assessment, with human oversight.**
 
-[Demo video](docs/BTR%20-%20pitch.mp4)
+A team hackathon prototype that turns loan applications, financial statements, and ESG disclosures into findings an analyst can review. Eight specialist agents coordinate document analysis, risk assessment, and three human approval checkpoints.
 
-Developed during a team hackathon, with César Soto Valero responsible for the primary application implementation. Team materials are retained in `docs/`.
+[Watch the demo](docs/BTR%20-%20pitch.mp4) · [Quick start](#quick-start-docker) · [Visual walkthrough](#visual-walkthrough) · [v0.1.0 release](https://github.com/cesarsotovalero/btr-project/releases/tag/v0.1.0)
 
-All seeded cases, historical outcomes, policy examples, and generated test documents are synthetic demonstration data, not customer records or authoritative bank policies. The published demo login and development signing-key default are for local demonstration only.
+![BTR case overview showing synthetic companies and review status](docs/screenshots/case-overview.jpg)
+
+*Track synthetic credit cases, documents, and review progress in one analyst workspace.*
+
+Built during a team hackathon at Skandinaviska Enskilda Banken (SEB), with César Soto Valero responsible for the primary application implementation. [Meet the team](docs/Team_BTR.png).
+
+> **Prototype / synthetic data:** Seeded companies, historical outcomes, policy examples, and generated test documents are illustrative, not customer records or authoritative bank policies. This project does not establish regulatory compliance. Demo credentials and the development signing key are for local demonstration only.
+
+## Visual walkthrough
+
+These screenshots are captured from the retained hackathon demo video. The recorded session may differ from a fresh seeded installation.
+
+1. **Choose a case.** Review the case list above and open a borrower to inspect its documents and workflow status.
+2. **Collect and analyze documents.** Upload source files, parse their contents, and start the agent pipeline.
+
+   ![Document workspace with upload area and PDF and Excel file list](docs/screenshots/document-analysis.jpg)
+
+3. **Review the findings.** Inspect risk factors and supporting reasoning; approve or reject the pipeline at its human checkpoints.
+
+   ![Risk assessment showing classification, confidence, missing information, and risk factors](docs/screenshots/risk-assessment.jpg)
+
+For the complete flow, [watch the two-minute demo](docs/BTR%20-%20pitch.mp4).
 
 ## Table of Contents
 
 - [BTR — Beat The Risk](#btr--beat-the-risk)
+  - [Visual walkthrough](#visual-walkthrough)
   - [Table of Contents](#table-of-contents)
   - [Architecture](#architecture)
   - [Agent Pipeline](#agent-pipeline)
