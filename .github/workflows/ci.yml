@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # Single Python version used by all Python-based jobs.
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Execute all shell commands from the API project folder.
+        working-directory: project-api
+
+    steps:
+      # Pull repository contents so workflow jobs can access source code.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install uv (fast Python package manager / runner) for dependency and task execution.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # Install and activate the configured Python runtime for this job.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Install locked dependencies, including development tools (ruff, pytest, etc.).
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Run Ruff static analysis checks against source and test code.
+      - name: Run Ruff linter
+        run: uv run ruff check src/ src/tests/
+
+      # Validate code formatting without modifying files.
+      - name: Check Ruff formatting
+        run: uv run ruff format --check src/ src/tests/
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Execute all shell commands from the API project folder.
+        working-directory: project-api
+
+    services:
+      # Ephemeral PostgreSQL container used by integration/database tests.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: btr
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: btr_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U btr"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # Test-only runtime configuration injected into the test process.
+      DATABASE_URL: postgresql+asyncpg://btr:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/btr_test
+      LLM_BACKEND: mock
+
+    steps:
+      # Pull repository contents so workflow jobs can access source code.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install uv (fast Python package manager / runner) for dependency and task execution.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # Install and activate the configured Python runtime for this job.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Install locked dependencies, including test tooling and coverage plugins.
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Execute tests verbosely and generate terminal + XML coverage reports.
+      - name: Run tests with coverage
+        run: uv run pytest src/tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+
+      # Upload coverage.xml to Codecov; errors here should not fail the entire workflow.
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: project-api/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Pull repository contents so Docker contexts can be built.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Enable Docker Buildx for modern, cache-aware image builds.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build API image to validate Dockerfile and dependencies (no registry push in CI).
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./project-api
+          push: false
+          tags: btr-api:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build UI image to validate frontend Dockerfile and dependencies (no push).
+      - name: Build UI image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./project-ui
+          push: false
+          tags: btr-ui:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

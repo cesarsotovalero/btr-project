@@ -1,0 +1,23 @@
+{
+  "name": "btr-ui",
+  "version": "0.1.0",
+  "description": "BTR Risk Assessment — Analyst Workspace UI",
+  "private": true,
+  "scripts": {
+    "copy-fonts": "node -e \"const fs=require('fs'),p=require('path'),d=p.join('public','fonts','SEBSansSerif');fs.mkdirSync(d,{recursive:true});const s=p.join('node_modules','@sebgroup','fonts','fonts','SEBSansSerif');fs.readdirSync(s).filter(f=>f.endsWith('.woff2')).forEach(f=>fs.copyFileSync(p.join(s,f),p.join(d,f)));console.log('Fonts copied.')\"",
+    "build": "npm run copy-fonts && esbuild src/green-setup.mjs --bundle --minify --outfile=public/js/green.bundle.js --format=iife && esbuild src/echarts-setup.mjs --bundle --minify --outfile=public/js/echarts.bundle.js --format=iife",
+    "start": "npm run build && node server.js",
+    "dev": "npm run build && node server.js"
+  },
+  "dependencies": {
+    "@sebgroup/fonts": "^3.0.1",
+    "@sebgroup/green-core": "^2.37.0",
+    "compression": "^1.8.1",
+    "echarts": "^6.0.0",
+    "express": "^4.21.0",
+    "http-proxy-middleware": "^3.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3"
+  }
+}

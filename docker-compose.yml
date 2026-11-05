@@ -1,0 +1,83 @@
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: btr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: btr
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U btr"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - project-network
+
+  # ---------- Backend API ----------
+  project-api:
+    build:
+      context: ./project-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+    environment:
+      DATABASE_URL: postgresql+asyncpg://btr:${POSTGRES_PASSWORD}@db:5432/btr
+      LLM_BACKEND: ${LLM_BACKEND:-gemini}
+      VERTEX_AI_PROJECT: ${VERTEX_AI_PROJECT:-}
+      VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-europe-west1}
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - project-network
+
+  # ---------- Worker (agent orchestration) ----------
+  project-worker:
+    build:
+      context: .
+      dockerfile: project-worker/Dockerfile
+    volumes:
+      - uploads:/app/uploads
+    environment:
+      DATABASE_URL: postgresql+asyncpg://btr:${POSTGRES_PASSWORD}@db:5432/btr
+      LLM_BACKEND: ${LLM_BACKEND:-gemini}
+      VERTEX_AI_PROJECT: ${VERTEX_AI_PROJECT:-}
+      VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-europe-west1}
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - project-network
+
+  # ---------- Frontend UI ----------
+  project-ui:
+    build:
+      context: ./project-ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      API_URL: http://project-api:8000
+    depends_on:
+      - project-api
+    networks:
+      - project-network
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  project-network:
+    driver: bridge
